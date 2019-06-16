@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "esModuleInterop": true,
+    "lib": [
+      "esnext.array",
+      "dom"
+    ]
+  }
+}
