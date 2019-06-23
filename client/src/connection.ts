@@ -1,7 +1,6 @@
 import { fromEvent, from, forkJoin, throwError, of } from 'rxjs'
-import { map, takeUntil, first, toArray, flatMap } from 'rxjs/operators'
+import { map, takeUntil, first, toArray, flatMap, mapTo } from 'rxjs/operators'
 import {Connection} from '../../shared/connection';
-import {openDataChannels} from '../../shared/components';
 
 export interface ClientConnectionParams {
   playerName: string
@@ -10,11 +9,14 @@ export interface ClientConnectionParams {
 
 export function connect(params: ClientConnectionParams) {
   const pc = new RTCPeerConnection({
-    // iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   })
 
-  const channels = openDataChannels(pc)
-  const channelsOpen$ = forkJoin(channels.map(c => c.open$))
+  window.addEventListener('beforeunload', () => {
+    pc.close()
+  })
+
+  pc.createDataChannel('dummy', { negotiated: true, id: 255 })
 
   const connected$ = fromEvent(pc, 'iceconnectionstatechange').pipe(
     map(() => pc.iceConnectionState),
@@ -22,6 +24,11 @@ export function connect(params: ClientConnectionParams) {
       return state === 'failed' ? throwError(new Error('connection state = failed')) : of(state)
     }),
     first(state => state === 'connected')
+  )
+
+  const closed$ = fromEvent(pc, 'iceconnectionstatechange').pipe(
+    map(() => pc.iceConnectionState),
+    first(state => state === 'disconnected'),
   )
 
   const iceCandidatesEvents$ = fromEvent(pc, 'icecandidate')
@@ -56,9 +63,11 @@ export function connect(params: ClientConnectionParams) {
     flatMap(({ answer, candidates }) =>
       pc.setRemoteDescription(answer).then(candidates.forEach(c => pc.addIceCandidate(c)))
     ),
-    flatMap(() => forkJoin([connected$, channelsOpen$])),
+    flatMap(() => forkJoin([connected$])),
     map((): Connection => ({
-      pc, channels
+      pc,
+      currentChannelId: 1,
+      closed$,
     }))
   )
 }

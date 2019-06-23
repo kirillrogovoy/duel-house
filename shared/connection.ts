@@ -1,7 +1,7 @@
-import { Observable, fromEvent } from 'rxjs'
-import {Channels} from './components';
+import { Observable } from 'rxjs'
 
 export interface Connection {
   pc: RTCPeerConnection
-  channels: Channels
+  currentChannelId: number
+  closed$: Observable<any>
 }

@@ -1,10 +1,9 @@
-import { fromEvent, from, combineLatest, of, Subject, throwError, forkJoin } from 'rxjs'
+import { fromEvent, from, combineLatest, of, Subject, throwError, interval, merge } from 'rxjs'
 import { map, takeUntil, first, toArray, flatMap, tap } from 'rxjs/operators'
 import { Engine, World, Bodies } from 'matter-js'
 import express from 'express'
 import cors from 'cors'
 import {Connection} from '../../shared/connection';
-import {openDataChannels} from '../../shared/components';
 
 const webrtcApis = require('wrtc')
 for (let key in webrtcApis) {
@@ -30,8 +29,7 @@ export function getIncomingConnections(params: ServerConnectionParams) {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     })
 
-  const channels = openDataChannels(pc)
-  const channelsOpen$ = forkJoin(channels.map(c => c.open$))
+    pc.createDataChannel('dummy', { negotiated: true, id: 255 })
 
     const connected$ = fromEvent(pc, 'iceconnectionstatechange').pipe(
       map(() => pc.iceConnectionState),
@@ -39,6 +37,11 @@ export function getIncomingConnections(params: ServerConnectionParams) {
         return state === 'failed' ? throwError(new Error('connection state = failed')) : of(state)
       }),
       first(state => state === 'connected')
+    )
+
+    const closed$ = merge(fromEvent(pc, 'iceconnectionstatechange'), interval(1000)).pipe(
+      map(() => pc.iceConnectionState),
+      first(state => state === 'disconnected'),
     )
 
     const { offer, candidates } = req.body
@@ -67,8 +70,12 @@ export function getIncomingConnections(params: ServerConnectionParams) {
       return res.json({ candidates, answer })
     })
 
-    forkJoin([connected$, channelsOpen$]).subscribe(() => {
-      connections.next({ pc, channels })
+    connected$.subscribe(() => {
+      connections.next({
+        pc,
+        currentChannelId: 1,
+        closed$,
+      })
     })
   })
   app.listen(params.port, params.host, () => console.log(`Listening on port ${params.port}!`))

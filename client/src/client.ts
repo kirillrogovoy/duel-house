@@ -1,14 +1,28 @@
 import { map, takeUntil, first, toArray, flatMap } from 'rxjs/operators'
 import chance from 'chance'
 import { connect } from './connection'
-import {Channel} from '../../shared/channel';
-import {HelloMessage} from '../../shared/components/hello';
+import {registerOnClient} from '../../shared/components';
+import {Engine, Render} from 'matter-js';
 
 const serverAddressElem = document.querySelector<HTMLInputElement>('.serverAddress')!
 const nameElem = document.querySelector<HTMLInputElement>('.name')!
 nameElem.value = chance().name()
 
 const buttonConnect = document.querySelector<HTMLButtonElement>('.buttonConnect')!
+
+const engine = Engine.create();
+Engine.run(engine);
+
+const render = Render.create({
+    element: document.querySelector('.game'),
+    engine: engine,
+    options: {
+        width: 800,
+        height: 600,
+    }
+});
+
+Render.run(render)
 
 buttonConnect.addEventListener('click', () => {
   const connection$ = connect({
@@ -18,10 +32,7 @@ buttonConnect.addEventListener('click', () => {
 
   connection$.subscribe(connection => {
     console.log('connection', connection)
-    const helloChannel = connection.channels.find(c => c.label === 'hello') as Channel<'hello',HelloMessage>
-    helloChannel.messages$.subscribe(m => console.log('hello message', m))
-    helloChannel.send({
-      text: 'hello from client'
-    })
+
+    const components = registerOnClient(connection, engine)
   })
 })
