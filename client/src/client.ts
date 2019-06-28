@@ -2,7 +2,7 @@ import { map, takeUntil, first, toArray, flatMap } from 'rxjs/operators'
 import chance from 'chance'
 import { connect } from './connection'
 import {registerOnClient} from '../../shared/components';
-import {Engine, Render} from 'matter-js';
+import {Engine, Render, World} from 'matter-js';
 
 const serverAddressElem = document.querySelector<HTMLInputElement>('.serverAddress')!
 const nameElem = document.querySelector<HTMLInputElement>('.name')!
@@ -10,7 +10,14 @@ nameElem.value = chance().name()
 
 const buttonConnect = document.querySelector<HTMLButtonElement>('.buttonConnect')!
 
-const engine = Engine.create();
+const world = World.create({
+  gravity: {
+    scale: 0,
+    x: 0,
+    y: 0
+  }
+})
+const engine = Engine.create({world});
 Engine.run(engine);
 
 const render = Render.create({

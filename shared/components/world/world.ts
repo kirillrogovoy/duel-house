@@ -13,6 +13,7 @@ export interface WorldMessage {
 }
 
 export function registerOnServer(input: ComponentServerInput) {
+  return
   const boxA = Bodies.rectangle(400, 200, 80, 80, { isStatic: true });
   const boxB = Bodies.rectangle(450, 50, 80, 80);
   const ground = Bodies.rectangle(400, 610, 810, 60, { isStatic: true });
@@ -34,6 +35,7 @@ export function registerOnServer(input: ComponentServerInput) {
 }
 
 export function registerOnClient(input: ComponentClientInput) {
+  return
   const channels = registerChannels(input.connection)
 
   interval(1000).subscribe(() => {

@@ -1,5 +1,5 @@
 import { map, takeUntil, first, toArray } from 'rxjs/operators'
-import { Engine } from 'matter-js'
+import { Engine, World } from 'matter-js'
 import {getIncomingConnections} from './connection';
 import {registerComponentsOnServer} from '../../shared/components';
 
@@ -11,7 +11,15 @@ console.log('start')
 
 
 ;(global as any).window = global
-const engine = Engine.create();
+
+const world = World.create({
+  gravity: {
+    scale: 0,
+    x: 0,
+    y: 0
+  }
+})
+const engine = Engine.create({world});
 Engine.run(engine);
 
 const connections$ = getIncomingConnections({

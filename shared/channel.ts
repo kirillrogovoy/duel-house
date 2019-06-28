@@ -1,5 +1,5 @@
-import { Observable, fromEvent } from 'rxjs'
-import { first, takeUntil, map } from 'rxjs/operators'
+import { Observable, fromEvent, interval, merge, ReplaySubject } from 'rxjs'
+import { first, takeUntil, map, delay, filter, switchMapTo } from 'rxjs/operators'
 import {Connection} from './connection';
 
 export interface Channel<T> {
@@ -7,6 +7,7 @@ export interface Channel<T> {
   send(message: T): void;
   messages$: Observable<T>
   closed$: Observable<Event>
+  handshake$: Observable<void>
 }
 
 export type Payload = ArrayBuffer
@@ -35,20 +36,40 @@ export function createChannel<T>(
     id: connection.currentChannelId++,
   })
 
-  console.log('created', rtcChannel.label, rtcChannel.id);
-  rtcChannel.addEventListener('open', () => console.log('open', rtcChannel.label))
-  rtcChannel.addEventListener('close', () => console.log('close', rtcChannel.label))
-  rtcChannel.addEventListener('error', () => console.log('error', rtcChannel.label))
-
   const closed$ = fromEvent(rtcChannel, 'close').pipe(first())
   const messages$ = fromEvent(rtcChannel, 'message').pipe(
-    map(event => coder.decode((event as MessageEvent).data)),
+    map(event => (event as MessageEvent).data),
+    filter(data => data !== handshakeMarker),
+    map(data => coder.decode(data)),
     takeUntil(closed$)
   )
+
+  const handshakeMarker = 'H'
+  const handshake$ = fromEvent(rtcChannel, 'message').pipe(
+    map(event => (event as MessageEvent).data),
+    first(m => m === handshakeMarker)
+  )
+
+  merge(handshake$, interval(100)).pipe(
+    takeUntil(handshake$.pipe(delay(1)))
+  ).subscribe(() => rtcChannel.send(handshakeMarker))
+
+  const messageBuffer = new ReplaySubject<T>()
+  closed$.subscribe(() => messageBuffer.complete())
+
+  handshake$.pipe(switchMapTo(messageBuffer)).subscribe(message => {
+    // emulating loss
+    // if (Math.random() > 0.7) {
+      // return
+    // }
+    rtcChannel.send(coder.encode(message))
+  })
+
   return {
     label: description.label,
-    send: (message: T) => rtcChannel.send(coder.encode(message)),
+    send: (message: T) => messageBuffer.next(message),
     messages$,
-    closed$
+    closed$,
+    handshake$
   }
 }
