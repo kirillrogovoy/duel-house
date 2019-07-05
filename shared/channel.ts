@@ -1,10 +1,10 @@
 import { Observable, fromEvent, interval, merge, ReplaySubject } from 'rxjs'
 import { first, takeUntil, map, delay, filter, switchMapTo } from 'rxjs/operators'
-import {Connection} from './connection';
+import { Connection } from './connection'
 
 export interface Channel<T> {
   label: string
-  send(message: T): void;
+  send(message: T): void
   messages$: Observable<T>
   closed$: Observable<Event>
   handshake$: Observable<void>
@@ -21,8 +21,8 @@ export type ChannelDescription = {
 } & RTCDataChannelInit
 
 const jsonMessageCoder = {
-  encode: (message: Object) => (new TextEncoder()).encode(JSON.stringify(message)),
-  decode: (payload: Payload) => JSON.parse((new TextDecoder()).decode(payload))
+  encode: (message: Object) => new TextEncoder().encode(JSON.stringify(message)),
+  decode: (payload: Payload) => JSON.parse(new TextDecoder().decode(payload))
 }
 
 export function createChannel<T>(
@@ -33,7 +33,7 @@ export function createChannel<T>(
   const rtcChannel = connection.pc.createDataChannel(description.label, {
     ...(description || {}),
     negotiated: true,
-    id: connection.currentChannelId++,
+    id: connection.currentChannelId++
   })
 
   const closed$ = fromEvent(rtcChannel, 'close').pipe(first())
@@ -50,9 +50,9 @@ export function createChannel<T>(
     first(m => m === handshakeMarker)
   )
 
-  merge(handshake$, interval(100)).pipe(
-    takeUntil(handshake$.pipe(delay(1)))
-  ).subscribe(() => rtcChannel.send(handshakeMarker))
+  merge(handshake$, interval(100))
+    .pipe(takeUntil(handshake$.pipe(delay(1))))
+    .subscribe(() => rtcChannel.send(handshakeMarker))
 
   const messageBuffer = new ReplaySubject<T>()
   closed$.subscribe(() => messageBuffer.complete())
@@ -60,8 +60,9 @@ export function createChannel<T>(
   handshake$.pipe(switchMapTo(messageBuffer)).subscribe(message => {
     // emulating loss
     // if (Math.random() > 0.7) {
-      // return
+    // return
     // }
+    // console.log('channel:send', description.label, message)
     rtcChannel.send(coder.encode(message))
   })
 

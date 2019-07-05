@@ -1,21 +1,13 @@
-import * as helloComponent from './components/hello/hello';
-import * as worldComponent from './components/world/world';
-import * as playerComponent from './components/player/player';
-import {Connection} from './connection';
-import {Observable, Subject} from 'rxjs';
-import {Engine} from 'matter-js';
+import * as helloComponent from './components/hello/hello'
+import * as worldComponent from './components/world/world'
+import * as playerComponent from './components/player/player'
+import * as bodiesComponent from './components/bodies/bodies'
+import { Connection } from './connection'
+import { Observable, Subject } from 'rxjs'
+import { Engine } from 'matter-js'
 
-export interface ComponentsServer {
-  hello: ReturnType<typeof helloComponent.registerOnServer>
-  world: ReturnType<typeof worldComponent.registerOnServer>
-  player: ReturnType<typeof playerComponent.registerOnServer>
-}
-
-export interface ComponentsClient {
-  hello: ReturnType<typeof helloComponent.registerOnClient>
-  world: ReturnType<typeof worldComponent.registerOnClient>
-  player: ReturnType<typeof playerComponent.registerOnClient>
-}
+export type ComponentsServer = ReturnType<typeof registerComponentsOnServer>
+export type ComponentsClient = ReturnType<typeof registerComponentsOnClient>
 
 export interface ComponentServerInput {
   connection: Connection
@@ -37,10 +29,11 @@ export function registerComponentsOnServer(connection: Connection, engine: Engin
     components$: componentsSubject.asObservable()
   }
 
-  const components: ComponentsServer = {
+  const components = {
     hello: helloComponent.registerOnServer(input),
     world: worldComponent.registerOnServer(input),
     player: playerComponent.registerOnServer(input),
+    bodies: bodiesComponent.registerOnServer(input),
   }
 
   componentsSubject.next(components)
@@ -49,7 +42,7 @@ export function registerComponentsOnServer(connection: Connection, engine: Engin
   return components
 }
 
-export function registerOnClient(connection: Connection, engine: Engine) {
+export function registerComponentsOnClient(connection: Connection, engine: Engine) {
   const componentsSubject = new Subject<ComponentsClient>()
   const input: ComponentClientInput = {
     connection,
@@ -57,10 +50,11 @@ export function registerOnClient(connection: Connection, engine: Engine) {
     components$: componentsSubject.asObservable()
   }
 
-  const components: ComponentsClient = {
+  const components = {
     hello: helloComponent.registerOnClient(input),
     world: worldComponent.registerOnClient(input),
     player: playerComponent.registerOnClient(input),
+    bodies: bodiesComponent.registerOnClient(input),
   }
 
   componentsSubject.next(components)

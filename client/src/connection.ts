@@ -1,6 +1,6 @@
 import { fromEvent, from, forkJoin, throwError, of } from 'rxjs'
 import { map, takeUntil, first, toArray, flatMap, mapTo, tap, switchMapTo } from 'rxjs/operators'
-import {Connection} from '../../shared/connection';
+import { Connection } from '../../shared/connection'
 
 export interface ClientConnectionParams {
   playerName: string
@@ -9,7 +9,7 @@ export interface ClientConnectionParams {
 
 export function connect(params: ClientConnectionParams) {
   const pc = new RTCPeerConnection({
-    // iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    // iceServers: [{ urls: 'stun:localhost:19302' }]
   })
 
   window.addEventListener('beforeunload', () => {
@@ -28,7 +28,7 @@ export function connect(params: ClientConnectionParams) {
 
   const closed$ = fromEvent(pc, 'iceconnectionstatechange').pipe(
     map(() => pc.iceConnectionState),
-    first(state => state === 'disconnected'),
+    first(state => state === 'disconnected')
   )
 
   const iceCandidatesEvents$ = fromEvent(pc, 'icecandidate')
@@ -61,12 +61,17 @@ export function connect(params: ClientConnectionParams) {
     }),
     flatMap(response => response.json()),
     flatMap(({ answer, candidates }) =>
-      pc.setRemoteDescription(answer).then(candidates.forEach(c => pc.addIceCandidate(c))).then(() => connected$)
+      pc
+        .setRemoteDescription(answer)
+        .then(candidates.forEach(c => pc.addIceCandidate(c)))
+        .then(() => connected$)
     ),
-    map((): Connection => ({
-      pc,
-      currentChannelId: 1,
-      closed$,
-    }))
+    map(
+      (): Connection => ({
+        pc,
+        currentChannelId: 1,
+        closed$
+      })
+    )
   )
 }

@@ -1,7 +1,7 @@
-import {createChannel} from '../../channel';
-import {of} from 'rxjs';
-import {ComponentServerInput, ComponentClientInput} from '../../components';
-import {Connection} from '../../connection';
+import { createChannel } from '../../channel'
+import { of } from 'rxjs'
+import { ComponentServerInput, ComponentClientInput } from '../../components'
+import { Connection } from '../../connection'
 
 export interface HelloMessage {
   text: string
@@ -47,6 +47,6 @@ export function registerOnClient(input: ComponentClientInput) {
 
 function registerChannels(connection: Connection) {
   return {
-    hello: createChannel<HelloMessage>(connection, {label: 'hello'}),
+    hello: createChannel<HelloMessage>(connection, { label: 'hello' })
   }
 }

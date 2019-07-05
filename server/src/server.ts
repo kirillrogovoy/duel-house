@@ -1,15 +1,16 @@
+import 'source-map-support/register'
 import { map, takeUntil, first, toArray } from 'rxjs/operators'
 import { Engine, World } from 'matter-js'
-import {getIncomingConnections} from './connection';
-import {registerComponentsOnServer} from '../../shared/components';
+import { getIncomingConnections } from './connection'
+import { registerComponentsOnServer } from '../../shared/components'
+import stun from 'stun'
+import {constructBoundBodies} from './bounds';
 
 const webrtcApis = require('wrtc')
 for (let key in webrtcApis) {
   ;(global as any)[key] = webrtcApis[key]
 }
 console.log('start')
-
-
 ;(global as any).window = global
 
 const world = World.create({
@@ -19,8 +20,12 @@ const world = World.create({
     y: 0
   }
 })
-const engine = Engine.create({world});
-Engine.run(engine);
+const engine = Engine.create({ world })
+Engine.run(engine)
+constructBoundBodies({
+  width: 1000,
+  height: 700,
+}, world)
 
 const connections$ = getIncomingConnections({
   host: '0.0.0.0',
@@ -28,7 +33,10 @@ const connections$ = getIncomingConnections({
 })
 
 connections$.subscribe(connection => {
-  console.log('connection', connection);
-
   registerComponentsOnServer(connection, engine)
 })
+
+const stunServer = stun.createServer({
+  type: 'udp4'
+})
+stunServer.listen('19302')

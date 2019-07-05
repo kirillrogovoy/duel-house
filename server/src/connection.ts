@@ -3,7 +3,7 @@ import { map, takeUntil, first, toArray, flatMap, tap } from 'rxjs/operators'
 import { Engine, World, Bodies } from 'matter-js'
 import express from 'express'
 import cors from 'cors'
-import {Connection} from '../../shared/connection';
+import { Connection } from '../../shared/connection'
 
 const webrtcApis = require('wrtc')
 for (let key in webrtcApis) {
@@ -26,7 +26,7 @@ export function getIncomingConnections(params: ServerConnectionParams) {
 
   app.post('/connect', (req, res) => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      // iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     })
 
     pc.createDataChannel('dummy', { negotiated: true, id: 255 })
@@ -41,7 +41,7 @@ export function getIncomingConnections(params: ServerConnectionParams) {
 
     const closed$ = merge(fromEvent(pc, 'iceconnectionstatechange'), interval(1000)).pipe(
       map(() => pc.iceConnectionState),
-      first(state => state === 'disconnected'),
+      first(state => state === 'disconnected')
     )
 
     const { offer, candidates } = req.body
@@ -49,7 +49,7 @@ export function getIncomingConnections(params: ServerConnectionParams) {
     const iceCandidatesEnd$ = iceCandidatesEvents$.pipe(
       first(event => (event as RTCPeerConnectionIceEvent).candidate === null)
     )
-    console.log(iceCandidatesCache.length > 0 ? 'cache' : 'no cache');
+    console.log(iceCandidatesCache.length > 0 ? 'cache' : 'no cache')
     const iceCandidates$ =
       iceCandidatesCache.length > 0
         ? of(iceCandidatesCache)
@@ -74,7 +74,7 @@ export function getIncomingConnections(params: ServerConnectionParams) {
       connections.next({
         pc,
         currentChannelId: 1,
-        closed$,
+        closed$
       })
     })
   })

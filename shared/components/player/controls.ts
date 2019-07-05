@@ -1,6 +1,6 @@
-import {fromEvent, merge, Observable} from 'rxjs';
-import {failIfNode} from '../../util';
-import {map, filter} from 'rxjs/operators';
+import { fromEvent, merge, Observable } from 'rxjs'
+import { failIfNode } from '../../util'
+import { map, filter } from 'rxjs/operators'
 
 export interface KeyEvent {
   up: boolean
@@ -14,7 +14,6 @@ export function getKeyStream(): Observable<KeyEvent> {
   const down$ = fromEvent(window, 'keydown')
   const up$ = fromEvent(window, 'keyup')
 
-  console.log('subscribe');
   return merge(down$, up$).pipe(
     map(e => {
       const ke = e as KeyboardEvent
@@ -41,12 +40,24 @@ export interface ArrowMovementCommand {
   commandType: keyof ArrowMovementKeyMap
 }
 
-export function getArrowMovements(keyEventStream: Observable<KeyEvent>, keyMap: ArrowMovementKeyMap): Observable<ArrowMovementCommand> {
+export function getArrowMovements(
+  keyEventStream: Observable<KeyEvent>,
+  keyMap: ArrowMovementKeyMap
+): Observable<ArrowMovementCommand> {
   return keyEventStream.pipe(
     filter(e => Object.values(keyMap).includes(e.code)),
-    map(e => ({
+    map((e): ArrowMovementCommand => ({
       pressed: !e.up,
-      commandType: keyMap.up === e.code ? 'up' : keyMap.down === e.code ? 'down' : keyMap.left === e.code ? 'left' : keyMap.right === e.code ? 'right' : undefined
+      commandType:
+        keyMap.up === e.code
+          ? 'up'
+          : keyMap.down === e.code
+          ? 'down'
+          : keyMap.left === e.code
+          ? 'left'
+          : keyMap.right === e.code
+          ? 'right'
+          : 'up' // impossible case, so we just please Typescript
     }))
   )
 }
