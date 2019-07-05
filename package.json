@@ -23,7 +23,10 @@
     "matter-js": "^0.14.2",
     "parcel-bundler": "^1.12.3",
     "rxjs": "^6.5.2",
+    "source-map-support": "^0.5.12",
+    "stun": "^2.0.0",
     "typescript": "^3.5.2",
+    "webrtc-adapter": "^7.2.4",
     "wrtc": "^0.4.1"
   }
 }
